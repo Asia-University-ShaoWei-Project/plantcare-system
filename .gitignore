@@ -1,1 +1,4 @@
+Pipfile.lock
+migrations/
+test/
 .env

@@ -43,7 +43,7 @@ def info(request):
 
 
 @csrf_exempt
-def save_infomation(request):
+def store_infomation(request):
   if request.method == 'POST':
     now = datetime.now()
     SaveInfo(
