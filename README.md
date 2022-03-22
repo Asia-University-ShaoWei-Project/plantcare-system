@@ -1,5 +1,6 @@
-# plantcare-system
+# Plantcare system
 
+- zh-name: 植物看護系統
 - demo [#video](https://youtu.be/---t79FYN9c)
 - Language: Python, C++
 - Tool: ESP32, Line bot

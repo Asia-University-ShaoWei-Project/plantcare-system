@@ -1,16 +1,31 @@
+from django.shortcuts import render
 from django.http.response import JsonResponse
-from django.core import serializers
+# from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from .models import TodayWeather, PlantInfo
-from apps.user.models import Profile
+from user.models import Profile
 from datetime import datetime
-
 import requests
 
 
 @csrf_exempt
 def getInfo(request):
+    # POST: api_key, sensor
   return JsonResponse({'id': 115})
+
+
+def testModel(request):
+  data = {
+      'status': True,
+      "test": "hello world",
+      # 'info':[1,2,3],
+      # 'data':{
+      #     'g':'e',
+      #     'gg':123
+      # }
+  }
+  # data = serializers.serialize("json", API.objects.all())
+  return JsonResponse(data)
 
 
 def today(request):
@@ -24,11 +39,12 @@ def today(request):
     data = [db_data.temperatures, db_data.humidity, db_data.PoP]
     for i, v in enumerate(data):
       result_date[title[i]] = v['value'][minHour(v['time'])]
-  # Take API of weather forecast
+    #   Take the data of weather forecast API
   else:
+    print('Get API data')
     db_data = {}
-    url = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-073?Authorization=CWB-8754F957-FEDB-4FD0-B8B8-FB3E5E7A361E&format=JSON&locationName=大里區&elementName=T,RH,PoP6h"
-    api_data = req_OpenSource(url=url)[0]['location'][0]['weatherElement']
+    api_url = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-D0047-073?Authorization=CWB-8754F957-FEDB-4FD0-B8B8-FB3E5E7A361E&format=JSON&locationName=大里區&elementName=T,RH,PoP6h"
+    api_data = req_OpenSource(url=api_url)[0]['location'][0]['weatherElement']
     sele = ['T', 'RH', 'PoP']
     date_attr = ['dataTime', 'dataTime', 'startTime']
     today = now.strftime("%d")
@@ -36,12 +52,16 @@ def today(request):
       tmp = {"time": [], "value": []}
       tmp_date_attr = date_attr[i]
       for j in api_data[i]['time']:
-        if j[tmp_date_attr][8:10] == today:  # day
-          tmp['time'].append(int(j[tmp_date_attr][11:13]))  # hour
-          tmp['value'].append(int(j['elementValue'][0]['value']))  # value
+          # day
+        if j[tmp_date_attr][8:10] == today:
+            # hour
+          tmp['time'].append(int(j[tmp_date_attr][11:13]))
+          # value
+          tmp['value'].append(int(j['elementValue'][0]['value']))
       db_data[v] = tmp
       index = minHour(tmp['time'])
-      result_date[v] = tmp['value'][index]  # 最近時間點數據
+      # 最近時間點數據
+      result_date[v] = tmp['value'][index]
 
     TodayWeather(
         date=date,
@@ -69,8 +89,8 @@ def minHour(data):
 
 def plant_infomation(request):
   # Wx: 天氣現象, MaxT: 最高溫度, MinT: 最低溫度, CI: 舒適度, Pop: 降雨機率
-  url = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-8754F957-FEDB-4FD0-B8B8-FB3E5E7A361E&format=JSON&locationName=%E8%87%BA%E4%B8%AD%E5%B8%82&elementName=Wx,PoP,MinT,MaxT"
-  data = req_OpenSource(url=url)
+  api_url = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-8754F957-FEDB-4FD0-B8B8-FB3E5E7A361E&format=JSON&locationName=%E8%87%BA%E4%B8%AD%E5%B8%82&elementName=Wx,PoP,MinT,MaxT"
+  data = req_OpenSource(url=api_url)
   if data:
     result = {
         'status': True,
@@ -97,8 +117,8 @@ def two_days_prediction(request):
 
 
 def rainfall(request):
-  api_url = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0002-001?Authorization=CWB-8754F957-FEDB-4FD0-B8B8-FB3E5E7A361E&format=JSON&locationName=%E5%A4%A7%E9%87%8C,%E6%A1%90%E6%9E%97&parameterName=CITY_SN"
-  data = requests.get(api_url)
+  #   api_url = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0002-001?Authorization=CWB-8754F957-FEDB-4FD0-B8B8-FB3E5E7A361E&format=JSON&locationName=%E5%A4%A7%E9%87%8C,%E6%A1%90%E6%9E%97&parameterName=CITY_SN"
+  #   data = requests.get(api_url)
   data = True
   if data:
     result = {

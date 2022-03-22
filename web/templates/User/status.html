@@ -1,71 +1,69 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block "title" %} - 資訊{% endblock "title"%}
-
-
-{% block "main" %}
+{% extends 'base.html' %} {% load static %} {% block "title" %} - 資訊{%
+endblock "title"%} {% block "main" %}
 <h1>info</h1>
 <canvas id="canvas"></canvas>
 <canvas id="myChart1" width="200" height="200"></canvas>
-{% endblock "main"%}
-
-
-{% block "script" %}
+{% endblock "main"%} {% block "script" %}
 <script src="{% static 'js/Chart.min.js' %}"></script>
 <script>
-    var lineChartData = {
-        labels: ["00:00", "00:30", "9", "12", "15", "18", "21", "24", "27"], //顯示區間名稱
-        datasets: [{
-            label: '未曾使用', // tootip 出現的名稱
-            lineTension: 0, // 曲線的彎度，設0 表示直線
-            backgroundColor: "#ea464d",
-            borderColor: "#ea464d",
-            borderWidth: 2,
-            data: [10, 12, 15, 18, 22, 33, 50, 60, 130], // 資料
-            fill: false, // 是否填滿色彩
-        }, {
-            label: '罹癌後開始使用',
-            lineTension: 0,
-            backgroundColor: "#29b288",
-            borderColor: "#29b288",
-            borderWidth: 5,
-            data: [12, 14, 18, 20, 21, 34, 60, 80, 200],
-            fill: false,
-
-        },]
-    };
-    function drawLineCanvas(ctx,data) {
-        window.myLine = new Chart(ctx, {  //先建立一個 chart
-            type: 'line', // 型態
-            data: data,
-            options: {
-                    responsive: true,
-                    legend: { //是否要顯示圖示
-                        display: true,
-                    },
-                    tooltips: { //是否要顯示 tooltip
-                        enabled: true
-                    },
-                    scales: {  //是否要顯示 x、y 軸
-                        xAxes: [{
-                            display: true
-                        }],
-                        yAxes: [{
-                            display: true
-                        }]
-                    },
-                }
-        });
-    };
-    window.onload = function () {
-        var ctx = document.getElementById("canvas").getContext("2d");
-        drawLineCanvas(ctx,lineChartData);
-    };
+  var lineChartData = {
+    labels: ["00:00", "00:30", "9", "12", "15", "18", "21", "24", "27"], //顯示區間名稱
+    datasets: [
+      {
+        label: "未曾使用", // tootip 出現的名稱
+        lineTension: 0, // 曲線的彎度，設0 表示直線
+        backgroundColor: "#ea464d",
+        borderColor: "#ea464d",
+        borderWidth: 2,
+        data: [10, 12, 15, 18, 22, 33, 50, 60, 130], // 資料
+        fill: false, // 是否填滿色彩
+      },
+      {
+        label: "罹癌後開始使用",
+        lineTension: 0,
+        backgroundColor: "#29b288",
+        borderColor: "#29b288",
+        borderWidth: 5,
+        data: [12, 14, 18, 20, 21, 34, 60, 80, 200],
+        fill: false,
+      },
+    ],
+  };
+  function drawLineCanvas(ctx, data) {
+    window.myLine = new Chart(ctx, {
+      //先建立一個 chart
+      type: "line", // 型態
+      data: data,
+      options: {
+        responsive: true,
+        legend: {
+          //是否要顯示圖示
+          display: true,
+        },
+        tooltips: {
+          //是否要顯示 tooltip
+          enabled: true,
+        },
+        scales: {
+          //是否要顯示 x、y 軸
+          xAxes: [
+            {
+              display: true,
+            },
+          ],
+          yAxes: [
+            {
+              display: true,
+            },
+          ],
+        },
+      },
+    });
+  }
+  window.onload = function () {
+    var ctx = document.getElementById("canvas").getContext("2d");
+    drawLineCanvas(ctx, lineChartData);
+  };
 </script>
 
-
 {% endblock "script"%}
-
-
-

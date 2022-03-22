@@ -1,18 +1,21 @@
+import os
+
+from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
-from apps.user.models import Profile
 
-import os
+from user.models import Profile
 
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from linebot import (LineBotApi, WebhookHandler)
 from linebot.exceptions import (InvalidSignatureError)
 
-LINE_BOT_ACCESS_TOKEN = os.getenv('LINE_BOT_ACCESS_TOKEN')
-LINE_BOT_SECURE = os.getenv('LINE_BOT_SECURE')
 
-line_bot_api = LineBotApi(LINE_BOT_ACCESS_TOKEN)
-handler = WebhookHandler(LINE_BOT_SECURE)
+token = os.getenv('LINE_BOT_ACCESS_TOKEN')
+secret = os.getenv('LINE_BOT_SECURE')
+
+line_bot_api = LineBotApi(token)
+handler = WebhookHandler(secret)
 
 
 @csrf_exempt
@@ -43,7 +46,9 @@ def handle_message(event: MessageEvent):
     message = "help\ninfo\nweb\nsetting\napi\ntoday"
     # event.source.user_id
   elif text in ['setting', 'web']:
-    message = "https://smart-terminal-dj.herokuapp.com/set"
+    domain = os.getenv('DOMAIN')
+    url = domain + "/setting"
+    message = url
   else:
     message = "可以輸入以下命令\n..."
   line_bot_api.reply_message(
@@ -53,11 +58,13 @@ def handle_message(event: MessageEvent):
 
 
 @csrf_exempt
-def push(request):
+def push():
   user = Profile.objects.get(id=1)
   message = "似乎元件損壞，請盡快修護!!"
-  TO = os.getenv("LINE_BOT_TO")
+  TO_USER = os.getenv('LINE_BOT_TO')
   line_bot_api.push_message(
-      TO, TextSendMessage(text=user.username+", "+message))
+      TO_USER,
+      TextSendMessage(text=user.username+"，"+message)
+  )
 
   return None

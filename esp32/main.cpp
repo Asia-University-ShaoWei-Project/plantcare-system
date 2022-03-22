@@ -4,89 +4,64 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <ESP32Servo.h>
+#include "plant.h"
+#include "network.h"
+#include <iostream>
 
-class Plant
-{
-public:
-  String code;
-  float s_min_temp;
-  float s_max_temp;
-  float s_humidity;
-  float s_soil_humidity;
-  float cur_temp;
-  float cur_humidity;
-  float cur_water;
-  float cur_soil_humidity;
-  void set_value(String, float, float, float, float);
-  void print_all();
-  bool temp_comppare(float);
-  String zip_data();
-};
-void Plant::set_value(String code, float min_temp, float max_temp, float humidity, float soil_humidity)
+void Plant::Setup(String code, float min_temp, float max_temp, float humidity, float soil_humidity)
 {
   code = code;
-  s_min_temp = min_temp;
-  s_max_temp = max_temp;
-  s_humidity = humidity;
-  s_soil_humidity = soil_humidity;
+  min_temp = min_temp;
+  max_temp = max_temp;
+  humidity = humidity;
+  soil_humidity = soil_humidity;
 }
-void Plant::print_all()
+float Plant::get_humidity()
 {
-  Serial.print("----- Plant information -----");
-  Serial.print("code: ");
-  Serial.println(code);
-  Serial.print("s_min_temp: ");
-  Serial.println(s_min_temp);
-  Serial.print("s_max_temp: ");
-  Serial.println(s_max_temp);
-  Serial.print("s_humidity: ");
-  Serial.println(s_humidity);
-  Serial.print("s_soil_humidity: ");
-  Serial.println(s_soil_humidity);
-  Serial.print("cur_temp: ");
-  Serial.println(cur_temp);
-  Serial.print("cur_humidity: ");
-  Serial.println(cur_humidity);
-  Serial.print("cur_water: ");
-  Serial.println(cur_water);
-  Serial.print("cur_soil_humidity: ");
-  Serial.println(cur_soil_humidity);
-  Serial.print("-------------------------");
-  Serial.println();
+  return humidity
 }
-bool Plant::temp_comppare(float temp)
+void Plant::Info()
 {
-  if ((temp >= s_min_temp) && (temp <= s_max_temp))
+  Serial.println("code: ", code);
+  Serial.println("min temperature: ", min_temp);
+
+  Serial.println("max temperature: ", max_temp);
+
+  Serial.println("humidity: ", humidity);
+
+  Serial.println("soil humidity: ", soil_humidity);
+
+  Serial.println("cur temp: ", tmp_temp);
+
+  Serial.println("cur humidity: ", tmp_humidity);
+
+  Serial.println("tmp_water: ", tmp_water);
+
+  Serial.println("tmp_soil_humidity: ", tmp_soil_humidity);
+}
+bool Plant::CheckTemperature(float temp)
+{
+  if ((temp >= min_temp) && (temp <= max_temp))
     return true;
   return false;
 }
-String Plant::zip_data()
+String Plant::Zip()
 {
-  // output: "api_key=tPmAT5Ab3j7F9&sensor=BME280&value1=24.25&value2=49.54&value3=1005.14";
-  return "Te=" + String(cur_temp) + "&Hu=" + String(cur_humidity) + "&Wa=" + String(cur_water) + "&SH=" + String(cur_soil_humidity);
+  return "Te=" + String(tmp_temp) + "&Hu=" + String(tmp_humidity) + "&Wa=" + String(tmp_water) + "&SH=" + String(tmp_soil_humidity);
 }
 
 Plant plant;
-// ------------------------- WiFi -------------------------
-const char *ssid = "wifi-id";
-const char *password = "wifi-password";
-void InitWiFi()
+Network network;
+
+network.set_domain("localhost");
+void Network::Setup()
 {
-  Serial.println("init wifi...");
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    Serial.print("connecting...");
-    delay(1000);
-  }
-  Serial.println("WiFi connected!");
 }
-// ------------------------- Http Client -------------------------
-HTTPClient http;
-String domainname = "http://localhost:8000";
-StaticJsonDocument<200> doc;
-// collation response data
-void http_response_collation(String response)
+void Network::set_domain(String url)
+{
+  domain = url;
+}
+void Network::response_collation(String response)
 {
   char json[500];
   response.replace(" ", "");
@@ -94,64 +69,57 @@ void http_response_collation(String response)
   response.trim();
   response.remove(0, 1);
   response.toCharArray(json, 500);
-  deserializeJson(doc, "{" + String(json));
+  deserializeJson(doc, "{" + String(json)); //! 不明原因，缺了"{"
 }
-
-void http_set_url(String url)
+void Network::set_url(String path)
 {
-  http.begin(domainname + url);
+  http.begin(domain + path);
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 }
-// post update information Save to DB.
-void http_post_infomation()
+void Network::post_infomation()
 {
-  http_set_url("/user/store_info/");
-  http.POST(plant.zip_data());
-  http_response_collation(http.getString());
+  set_url("/user/store_info/");
+  http.POST(plant.Zip());
+  response_collation(http.getString());
   Serial.print("response data = ");
   Serial.println(doc["status"].as<bool>());
 }
-// setting plant code
-void http_get_my_plant_code()
+void Network::get_my_plant_code()
 {
-  http_set_url("/api/my_plant/");
+  set_url("/api/my_plant/");
   http.GET();
-  http_response_collation(http.getString());
+  response_collation(http.getString());
   plant.code = String(doc["code"].as<char *>());
 }
-void http_get_plant_info(String code)
+//! return multi float
+float Network::GetUserConfig(Plant &p)
 {
-  http_set_url("/api/plant_info/");
-  http.POST("code=" + code);
-  http_response_collation(http.getString());
-  plant.s_min_temp = doc["minTemp"].as<float>();
-  plant.s_max_temp = doc["maxTemp"].as<float>();
-  plant.s_humidity = doc["humidity"].as<float>();
-  plant.s_soil_humidity = doc["soil_humidity"].as<float>();
+  set_url("/api/plant_info/");
+  http.POST("code=" + p.get_code());
+  response_collation(http.getString());
+  return doc["minTemp"].as<float>(), doc["maxTemp"].as<float>(), doc["humidity"].as<float>();
+  , doc["soil_humidity"].as<float>();
 }
-// ------------------------- DHT11 溫溼度檢測 -------------------------
+
+//! DHT11 溫溼度檢測
 #define DHT_PIN 6
 #define DHT_TYPE DHT11
-// Initialize DHT sensor.
-DHT dht(DHT_PIN, DHT_TYPE);
+DHT dht(DHT_PIN, DHT_TYPE); // init
 
 void DHTSensor()
 {
-  Serial1.println("do DHTSensor");
   delay(2000);
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature();
 
-  if (isnan(h) || isnan(t))
+  if (isnan(humidity) || isnan(temperature))
   {
     Serial.println(F("Failed to read from DHT sensor!"));
     return;
-    float hic = dht.computeHeatIndex(t, h, false);
+    float hic = dht.computeHeatIndex(temperature, humidity, false);
 
-    Serial.print(F("Humidity: "));
-    Serial.print(h);
-    Serial.print(F("%  Temperature: "));
-    Serial.print(t);
+    Serial.print(F("Humidity: "), humidity);
+    Serial.print(F("%  Temperature: ", temperature));
     Serial.print(F(" ˙C, "));
     Serial.print(F(" Heat index: "));
     Serial.print(hic);
@@ -164,7 +132,7 @@ void DHTSensor()
   }
 }
 
-// ------------------------- LED -------------------------
+//! LED
 #define LED_PIN 23
 void InitLED()
 {
@@ -175,10 +143,10 @@ void LED()
 {
 }
 
-// ------------------------- measure water -------------------------
+//! measure water
 #define WATER_SENSOR_POWER_PIN 8
 #define WATER_SENSOR_DATA_PIN A16
-int water_curr_value = 0;
+int water_curr = 0;
 
 void InitWaterSensor()
 {
@@ -188,17 +156,16 @@ void InitWaterSensor()
 void WaterSensor()
 {
   delay(1000);
-  water_curr_value = analogRead(WATER_SENSOR_DATA_PIN);
-  Serial.print("value: ");
-  Serial.println(water_curr_value);
+  water_curr = analogRead(WATER_SENSOR_DATA_PIN);
+  Serial.println("current water: ", water_curr);
   // if (warning[water_warn_index] < 5)
   // {
   //   digitalWrite(WATER_SENSOR_POWER_PIN, HIGH);
   //   delay(1000);
-  //   water_curr_value = analogRead(WATER_SENSOR_DATA_PIN);
+  //   water_curr = analogRead(WATER_SENSOR_DATA_PIN);
   //   Serial.print("value: ");
-  //   Serial.println(water_curr_value);
-  //   if (water_curr_value > 1700)
+  //   Serial.println(water_curr);
+  //   if (water_curr > 1700)
   //   {
   //     Serial.println("over");
   //   }
@@ -210,36 +177,36 @@ void WaterSensor()
   // }
 }
 
-// ------------------------- 伺服器馬達 -------------------------
+//! Motor
 #define ANGLE_POWER_PIN 12
-Servo myservo;
-int pos = 0;
+Servo motor;
+int position = 0;
+int min_degrees = 0;
+int max_degrees = 180;
+int increase = 2;
 void InitWaterBoard()
 {
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);
-  // standard 50 hz servo
-  myservo.setPeriodHertz(50);
-  myservo.attach(ANGLE_POWER_PIN, 1000, 2000);
+  motor.setPeriodHertz(50);
+  motor.attach(ANGLE_POWER_PIN, 1000, 2000);
 }
 void WaterBoard()
 {
-
-  for (pos = 0; pos <= 180; pos += 2)
-  { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos); // tell servo to go to position in variable 'pos'
-    delay(10);          // waits 15ms for the servo to reach the position
+  for (position = min_degrees; position <= max_degrees; position += increase)
+  {
+    motor.write(position);
+    delay(10);
   }
-  for (pos = 180; pos >= 0; pos -= 2)
-  {                     // goes from 180 degrees to 0 degrees
-    myservo.write(pos); // tell servo to go to position in variable 'pos'
-    delay(10);          // waits 15ms for the servo to reach the position
+  for (position = max_degrees; position >= min_degrees; position -= increase)
+  {
+    motor.write(position);
+    delay(10);
   }
 }
-// ------------------------- 土壤濕度偵測 -------------------------
+//! Solid humidity sensor
 #define SOIL_PIN A0
 
 void InitSoilSensor()
@@ -275,30 +242,43 @@ void InitTimer()
 {
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &onTimer, true);
-  // 1 second = 1000000us
-  timerAlarmWrite(timer, 1000000 * 6, true /* repeatable */);
+  // 1 second = 1000000 us
+  timerAlarmWrite(timer, 1000000 * 6, tru /* repeatable */);
   timerAlarmEnable(timer);
 }
 
-// ------------------------- setup -------------------------
+const char *wifi_id = "wifi_ID";
+const char *wifi_passwd = "wifi_password";
+void InitWiFi()
+{
+  Serial.println("Init WIFI...");
+  WiFi.begin(wifi_id, wifi_passwd);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print("Connecting...");
+    delay(1000);
+  }
+  Serial.println("Connected!");
+}
+
 void setup()
 {
   Serial.begin(115200);
-  Serial.println("init");
+  Serial.println("==== init ====");
   InitWiFi();
-  http_get_my_plant_code();
-  http_get_plant_info(plant.code);
-  // 暫時，存前各值(cur_開頭)
-  set_cur_plant_value();
-  // 定期更新
+  network.get_my_plant_code();
+  network.get_plant_info(plant.code);
+  // 暫時，存前各值(tmp_開頭)
+  set_tmp_plant_value();
+  // Regularly updated
   // http_post_infomation();
-  plant.print_all();
+  plant.Setup(network.GetUserConfig(plant.code))
+      plant.Info();
 
   // InitTimer();
   // InitWaterSensor();
   // InitWaterBoard();
 }
-// ------------------------- loop -------------------------
 
 void loop()
 {
@@ -309,7 +289,7 @@ void loop()
 // dht.begin();
 
 // pinMode(Water_Sensor, INPUT);
-// pinMode(WATER_SENSOR_POWER, OUTPUT);
+// pinMode(WATER_SENSOR_POWER, OUTPUT); ESP給電予你
 // digitalWrite(WATER_SENSOR_POWER, LOW);
 
 // pinMode(SOIL_PIN, INPUT); //D(input), A(input)
@@ -325,10 +305,10 @@ void loop()
 //     0);        /* pin task to core 0 */
 
 // --------------------- 暫時 -----------------
-void set_cur_plant_value()
+void set_tmp_plant_value()
 {
-  plant.cur_temp = 20.0;
-  plant.cur_humidity = 70.0;
-  plant.cur_soil_humidity = 1000.0;
-  plant.cur_water = 1400.0;
+  plant.tmp_temp = 20.0;
+  plant.tmp_humidity = 70.0;
+  plant.tmp_soil_humidity = 1000.0;
+  plant.tmp_water = 1400.0;
 }

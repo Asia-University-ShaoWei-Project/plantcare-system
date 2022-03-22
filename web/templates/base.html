@@ -1,23 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>自動照護{% block "title" %}{% endblock "title"%}</title>
     {% load static %}
-<link rel="stylesheet" type="text/css" href="{% static 'css/uikit.min.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/uikit.min.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/uikit-icons.min.css' %}">
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static 'css/uikit.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static 'css/uikit.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static 'css/uikit-icons.min.css' %}"
+    />
     {% block css %}{% endblock css%}
-</head>
-<body>
-<div class="uk-container" style="padding-top: 10%;">
-{% block "main" %}{% endblock "main"%}
-
-</div>
-<script src="{% static 'js/uikit.min.js' %}"></script>
-<script src="{% static 'js/uikit-icons.min.js' %}"></script>
-{% block "script" %}{% endblock "script"%}
-
-</body>
+  </head>
+  <body>
+    <div class="uk-container" style="padding-top: 10%">
+      {% block "main" %}{% endblock "main"%}
+    </div>
+    <script src="{% static 'js/uikit.min.js' %}"></script>
+    <script src="{% static 'js/uikit-icons.min.js' %}"></script>
+    {% block "script" %}{% endblock "script"%}
+  </body>
 </html>

@@ -1,26 +1,27 @@
 from django.db import models
-
 import jsonfield
 
 
 class Profile(models.Model):
-  username = models.TextField(default="Username", max_length=10)
+  username = models.TextField(max_length=10)
+  # https://kknews.cc/zh-tw/news/mqnpykp.html
   PLANT_CHOICES = [
-      ('Na', '無'),
-      ('A', '金錢樹'),
-      ('B', '龍血樹')
+      ('nan', 'Nan'),
+      ('rose', 'Rose'),
+      ('tulip', 'Tulip')
   ]
   UPDATE_CHOICES = [
-      ('02', '20秒(測試)'),
-      ('30', '30分'),
-      ('60', '1小時'),
-      ('180', '3小時'),
-      ('720', '12小時')
+      # testing
+      ('02', '20 second'),
+      ('30', '30 minute'),
+      ('60', '1 hour'),
+      ('180', '3 hour'),
+      ('720', '12 hour')
   ]
   plant = models.CharField(
       max_length=2,
       choices=PLANT_CHOICES,
-      default='Na'
+      default='nan'
   )
   update_frequency = models.CharField(
       max_length=3,
@@ -38,14 +39,14 @@ class SaveInfo(models.Model):
   time = models.CharField(max_length=8)
   temperatures = jsonfield.JSONField()
   humidity = jsonfield.JSONField()
-  water_stage = jsonfield.JSONField()
+  water_storage = jsonfield.JSONField()
   soil_humidity = jsonfield.JSONField()
 
 
 class SaveStatus(models.Model):
-  led = models.BooleanField(default=False)
-  water_control = models.BooleanField(default=False)
+  soil_sensor = models.BooleanField(default=False)
+  LED = models.BooleanField(default=False)
+  water_storage_control = models.BooleanField(default=False)
   water_sensor = models.BooleanField(default=False)
   water_board = models.BooleanField(default=False)
   watering_control = models.BooleanField(default=False)
-  soil_sensor = models.BooleanField(default=False)
